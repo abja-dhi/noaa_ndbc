@@ -1,0 +1,2 @@
+include noaa_ndbc/*.kml
+include noaa_ndbc/*.csv
