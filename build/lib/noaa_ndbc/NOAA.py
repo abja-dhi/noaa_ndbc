@@ -257,6 +257,9 @@ def create_shapefile(station_ids, file_name="Stations.shp"):
         pointShp.write(rowDict)
     pointShp.close()
 
+def tester():
+    print(os.getcwd())
+
 #stations = [46022, 46002, "HBXC1", "HBYC1", "NJLC1"]
 #download(X=[-127, -124], Y=[40, 42], dfs0=True, shapefile=True, shp_fname="Humboldt", csv=True)
 #stations = find_stations_within_box(X=[-127, -124], Y=[40, 42])
