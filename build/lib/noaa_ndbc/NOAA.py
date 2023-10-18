@@ -106,7 +106,7 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
         if dfs0 == False:
             csv = True
             log.write("CSV option is enabled!\n")
-        dfsMerged = None
+        dfMerged = pd.DataFrame()
         
         
         #base_url = "https://www.ndbc.noaa.gov/data/historical/stdmet/{station}h{year}.txt.gz"
@@ -119,8 +119,8 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
             code = download_file(station_id, y)
             if code:
                 modify_csv(f)
+                df = pd.read_csv(f, index_col=0, parse_dates=True)
                 if dfs0:
-                    df = pd.read_csv(f, index_col=0, parse_dates=True)
                     df.to_dfs0(f.replace(".csv", ".dfs0"))
                     log.write(f.replace(".csv", ".dfs0") + " is downloaded!\n")
                 #print("Data for " + str(y) + " is downloaded as " + f)
@@ -129,14 +129,17 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
                 else:
                     log.write(f + " is downloaded!\n")
                 if merge:
-                    if dfsMerged == None:
-                        dfsMerged = mikeio.read(f.replace(".csv", ".dfs0"))
-                    else:
-                        dfsMerged = mikeio.Dataset.concat([dfsMerged, mikeio.read(f.replace(".csv", ".dfs0"))])
+                    #if dfMerged == None:
+                        #dfsMerged = mikeio.read(f.replace(".csv", ".dfs0"))
+                    #    dfMerged = df
+                    #else:
+                    dfMerged = pd.concat([dfMerged, df])
+                        #dfsMerged = mikeio.Dataset.concat([dfsMerged, mikeio.read(f.replace(".csv", ".dfs0"))])
                 os.chdir(currd)
-        if merge and dfsMerged != None:
+        if merge and len(dfMerged.index) > 0:
             mkch(str(station_id))
-            dfsMerged.to_dfs(str(station_id) + "," + str(start) + "-" + str(end) + ".dfs0")
+            dfMerged.sort_index(axis=0, inplace=True)
+            dfMerged.to_dfs0(str(station_id) + "," + str(start) + "-" + str(end) + ".dfs0")
             os.chdir(currd)
     if shapefile:
         create_shapefile(station_ids=station_ids, file_name=shp_fname)
