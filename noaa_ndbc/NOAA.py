@@ -49,7 +49,7 @@ def check_data_availability(station_id):
     return years
 
 def download_file(station_id, y):
-    log = open("Error logs.txt", "a")
+    log = open("logs.txt", "a")
     
     fname = "{station} - {year}.csv"
     url_base = "https://www.ndbc.noaa.gov/view_text_file.php?filename={station}h{year}.txt.gz&dir=data/historical/stdmet/"
@@ -83,9 +83,15 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
     mainEnd = end
     if X != None and Y != None:
         station_ids = find_stations_within_box(X, Y)
+        print("The following stations are found within the specified box:")
+        log.write("The following stations are found within the specified box:\n")
+        print(station_ids)
     
     for station_id in station_ids:
         years = check_data_availability(station_id)
+        if len(years) == 0:
+            log.write("No data is available for " + str(station_id) + "\n")
+            continue
         if mainStart != None:
             start = int(mainStart)
         if mainEnd != None:
@@ -252,12 +258,7 @@ def create_shapefile(station_ids, file_name="Stations.shp"):
     pointShp = fiona.open(file_name, mode='w', driver='ESRI Shapefile', schema = schema, crs = "EPSG:4326")
     lons, lats = get_station_info(station_ids)
     for i in range(len(station_ids)):
-        print(station_ids[i], lons[i], lats[i])
         rowDict = { 'geometry' : {'type':'Point', 'coordinates': (lons[i],lats[i])}, 'properties': {'Name' : str(station_ids[i])}}
         pointShp.write(rowDict)
     pointShp.close()
 
-#stations = [46022, 46002, "HBXC1", "HBYC1", "NJLC1"]
-#download(X=[-127, -124], Y=[40, 42], dfs0=True, shapefile=True, shp_fname="Humboldt", csv=True)
-#stations = find_stations_within_box(X=[-127, -124], Y=[40, 42])
-#create_shapefile(stations)
