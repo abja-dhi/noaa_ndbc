@@ -76,7 +76,7 @@ def download_file(station_id, y):
     return True
 
 def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=False, shapefile=False, shp_fname="Stations.shp", X=None, Y=None):
-    log = open("Error logs.txt", "w")
+    log = open("logs.txt", "w")
     if type(station_ids) != list:
         station_ids = [station_ids]
     mainStart = start
@@ -218,11 +218,12 @@ def find_stations_within_box(X, Y):
     doc = parser.parse(f).getroot()
     station_ids = []
     for folder in doc.Document.Folder.Folder:
-        for station in folder.Placemark:
-            lon = float(station.LookAt.longitude)
-            lat = float(station.LookAt.latitude)
-            if lon > X[0] and lon < X[1] and lat > Y[0] and lat < Y[1]:
-                station_ids.append(station.name)
+        if folder.name != "Ships":
+            for station in folder.Placemark:
+                lon = float(station.LookAt.longitude)
+                lat = float(station.LookAt.latitude)
+                if lon > X[0] and lon < X[1] and lat > Y[0] and lat < Y[1]:
+                    station_ids.append(station.name)
     f.close()
     os.remove("map.kml")
     return station_ids
@@ -237,10 +238,11 @@ def get_station_info(station_ids):
     lons = []
     lats = []
     for folder in doc.Document.Folder.Folder:
-        for station in folder.Placemark:
-            if str(station.name) in stations_str:
-                lons.append(station.LookAt.longitude)
-                lats.append(station.LookAt.latitude)
+        if folder.name != "Ships":
+            for station in folder.Placemark:
+                if str(station.name) in stations_str:
+                    lons.append(station.LookAt.longitude)
+                    lats.append(station.LookAt.latitude)
     f.close()
     os.remove("map.kml")
     return lons, lats
@@ -252,7 +254,6 @@ def create_shapefile(station_ids, file_name="Stations.shp"):
     folder_name = file_name.split(".")[0]
     mkch(folder_name)
     schema = { 'geometry':'Point', 'properties':[('Name','str')]}
-    # explore available drivers
     fiona.supported_drivers
 
     pointShp = fiona.open(file_name, mode='w', driver='ESRI Shapefile', schema = schema, crs = "EPSG:4326")
