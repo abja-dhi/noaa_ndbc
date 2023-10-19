@@ -26,4 +26,8 @@ NOAA.download([46022, "HBXC1"], dfs0=True, csv=False, shapefile=True, shp_fname=
 #######
 NOAA.download(X=[-127, -124], Y=[40, 42])
 NOAA.download(X=[-127, -124], Y=[40, 42], dfs0=True)
-NOAA.download(X=[-127, -124], Y=[40, 42], dfs0=True, shapefile=True, shp_fname="Test3")
+NOAA.download(X=[-127, -124], Y=[40, 42], dfs0=True, csv=False, shapefile=True, shp_fname="Test3")
+
+
+#Other utilities
+
