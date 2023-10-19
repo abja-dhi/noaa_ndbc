@@ -146,7 +146,6 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
         log.write("Shapefile created!\n")
     log.close()
 
-
 def NOAA_items():
     items = {"YY": "year", "YYYY": "year", "#YY": "year",
              "MM": "month",
