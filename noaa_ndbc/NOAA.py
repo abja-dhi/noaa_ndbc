@@ -32,14 +32,27 @@ def mkch(path):
         pass
     os.chdir(path)
 
-def check_data_availability(station_id):
+def define_var(variable):
+    if variable == "Meterological":
+        return "stdmet", "h"
+    elif variable == "Currents":
+        return "adcp", "a"
+    elif variable == "Wind":
+        return "cwind", "c"
+    print("Variable is not defined!")
+    quit()
+    
+
+def check_data_availability(station_id, variable="Meterological"):
+    var, letter = define_var(variable)
     years = []
     url = "https://www.ndbc.noaa.gov/historical_data.shtml"
     page = urlopen(url)
     html_bytes = page.read()
     html = html_bytes.decode("utf-8")
     soup = bs4.BeautifulSoup(html, "lxml")
-    histfiles = soup.find("ul", {"class": "histfiles"})
+    lst = soup.find("a", {"id": var}).parent
+    histfiles = lst.find("ul", {"class": "histfiles"})
     stations = histfiles.find_all("li")
     for elem in stations:
         if elem.text.split(" ")[0].split(":")[0] == str(station_id):
@@ -48,14 +61,16 @@ def check_data_availability(station_id):
                 years.append(int(year.text))
     return years
 
-def download_file(station_id, y):
+def download_file(station_id, y, variable="Meterological"):
     log = open("logs.txt", "a")
     
-    fname = "{station} - {year}.csv"
-    url_base = "https://www.ndbc.noaa.gov/view_text_file.php?filename={station}h{year}.txt.gz&dir=data/historical/stdmet/"
+    var, letter = define_var(variable)
+
+    fname = "{station} - {year} - {var}.csv"
+    url_base = "https://www.ndbc.noaa.gov/view_text_file.php?filename={station}{letter}{year}.txt.gz&dir=data/historical/{var}/"
     
-    f = fname.format(station=str(station_id), year=str(y))
-    url = url_base.format(station=str(station_id).lower(), year=str(y))
+    f = fname.format(station=str(station_id), year=str(y), var=var)
+    url = url_base.format(station=str(station_id).lower(), year=str(y), var=var, letter=letter)
     r = requests.get(url, stream=True)
     if r.status_code != 200:
         log.write("Data for " + str(station_id) + " for " + str(y) + " is not availble!\n")
@@ -75,8 +90,9 @@ def download_file(station_id, y):
     log.close()
     return True
 
-def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=False, shapefile=False, shp_fname="Stations.shp", X=None, Y=None):
+def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=False, shapefile=False, shp_fname="Stations.shp", X=None, Y=None, variable="Meterological"):
     log = open("logs.txt", "w")
+    var, letter = define_var(variable)
     if type(station_ids) != list:
         station_ids = [station_ids]
     mainStart = start
@@ -88,7 +104,7 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
         print(station_ids)
     
     for station_id in station_ids:
-        years = check_data_availability(station_id)
+        years = check_data_availability(station_id, variable=variable)
         if len(years) == 0:
             log.write("No data is available for " + str(station_id) + "\n")
             continue
@@ -109,16 +125,14 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
         dfMerged = pd.DataFrame()
         
         
-        #base_url = "https://www.ndbc.noaa.gov/data/historical/stdmet/{station}h{year}.txt.gz"
-        fname = "{station} - {year}.csv"
-        #fname = "{station} - {year}.txt.gz"
+        fname = "{station} - {year} - {var}.csv"
         for y in tqdm(range(start, end+1), desc=str(station_id)):
             
             currd = os.getcwd()
-            f = fname.format(station=str(station_id), year=str(y))
-            code = download_file(station_id, y)
+            f = fname.format(station=str(station_id), year=str(y), var=var)
+            code = download_file(station_id, y, variable)
             if code:
-                modify_csv(f)
+                modify_csv(f, variable=variable)
                 df = pd.read_csv(f, index_col=0, parse_dates=True)
                 if dfs0:
                     df.to_dfs0(f.replace(".csv", ".dfs0"))
@@ -139,39 +153,54 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
         if merge and len(dfMerged.index) > 0:
             mkch(str(station_id))
             dfMerged.sort_index(axis=0, inplace=True)
-            dfMerged.to_dfs0(str(station_id) + "," + str(start) + "-" + str(end) + ".dfs0")
+            dfMerged.to_dfs0(str(station_id) + "," + str(start) + "-" + str(end) + " - "+ var + ".dfs0")
             os.chdir(currd)
     if shapefile:
         create_shapefile(station_ids=station_ids, file_name=shp_fname)
         log.write("Shapefile created!\n")
     log.close()
 
-def NOAA_items():
-    items = {"YY": "year", "YYYY": "year", "#YY": "year",
-             "MM": "month",
-             "DD":"day",
-             "hh": "hour", 
-             "mm": "minute", 
-             "WD": "WD", "WDIR": "WD",
-             "WSPD": "WS", 
-             "GST": "Gust_Speed",
-             "WVHT": "Hm0",
-             "DPD": "Tp",
-             "APD": "T01",
-             "MWD": "MWD",
-             "PRES": "Sea_Level_Pressure","BAR": "Sea_Level_Pressure",
-             "ATMP": "Air_Temperature",
-             "WTMP": "Sea_Surface_Temperature",
-             "DEWP": "Dewpoint_Temperature",
-             "VIS": "Visibility",
-             "PTDY": "Pressure_Tendency",
-             "TIDE": "Water_Level"}
+def NOAA_items(variable):
+    if variable == "Meterological":
+        items = {"YY": "year", "YYYY": "year", "#YY": "year",
+                 "MM": "month",
+                 "DD":"day",
+                 "hh": "hour", 
+                 "mm": "minute", 
+                 "WD": "WD", "WDIR": "WD",
+                 "WSPD": "WS", 
+                 "GST": "Gust_Speed",
+                 "WVHT": "Hm0",
+                 "DPD": "Tp",
+                 "APD": "T01",
+                 "MWD": "MWD",
+                 "PRES": "Sea_Level_Pressure","BAR": "Sea_Level_Pressure",
+                 "ATMP": "Air_Temperature",
+                 "WTMP": "Sea_Surface_Temperature",
+                 "DEWP": "Dewpoint_Temperature",
+                 "VIS": "Visibility",
+                 "PTDY": "Pressure_Tendency",
+                 "TIDE": "Water_Level"}
+    elif variable == "Currents":
+        items = {}
+        for i in range(1, 21):
+            items["DEP"+str(i).zfill(2)] = "Depth "+str(i).zfill(2)
+            items["DIR"+str(i).zfill(2)] = "Current Direction "+str(i).zfill(2)
+            items["SPD"+str(i).zfill(2)] = "Current Speed "+str(i).zfill(2)
+        items["YY"] = "year"
+        items["YYYY"] = "year"
+        items["#YY"] = "year"
+        items["MM"] = "month"
+        items["DD"] = "day"
+        items["hh"] = "hour"
+        items["mm"] = "minute"
+    
+                 
     return items
 
-def replace_nans(df):
-    items = NOAA_items()
+def replace_nans(df, items):
     nans = {}
-    for key in items.values():
+    for key in items:
         if key == "WD" or key == "MWD" or key == "Air_Temperature" or key == "Sea_Surface_Temperature" or key == "Dewpoint_Temperature":
             nans[key] = 999.0
         elif key == "WS" or key == "Gust_Speed" or key == "Hm0" or key == "Tp" or key == "T01" or key == "Visibility" or key == "Water_Level":
@@ -185,19 +214,39 @@ def replace_nans(df):
     
     return df
     
-def modify_csv(fname):
+def modify_csv(fname, variable="Meterological"):
     f = open(fname, "r")
-    l0 = f.readline().split(",")[0]
-    l1 = f.readline().split(",")[0]
-    l2 = f.readline().split(",")[0]
-    skiprows = 0
+    l0 = f.readline()
+    l1 = f.readline()
+    l2 = f.readline()
+    skiprows = [0]
     if "#" in l1:
         skiprows = [1]
     f.close()
-    df = pd.read_csv(fname, skiprows=skiprows)
-    items = NOAA_items()
-    for c in df.columns:
-        df.rename(columns={c: items[c]}, inplace=True)
+    
+    if variable == "Meterological":
+        if skiprows == [0]:
+            skiprows = 0
+        df = pd.read_csv(fname, skiprows=skiprows)
+    
+        items = NOAA_items(variable)
+        for c in df.columns:
+            df.rename(columns={c: items[c]}, inplace=True)
+    elif variable == "Currents":
+        cols = len(l2.split(","))
+        if cols%3 == 1:
+            items = ["year", "month", "day", "hour"]
+            tmp = 4
+        else:
+            items = ["year", "month", "day", "hour", "minute"]
+            tmp = 5
+        for i in range(1, int((cols-tmp)/3)+1):
+            items = items + ["Depth "+str(i).zfill(2)]
+            items = items + ["Current Direction "+str(i).zfill(2)]
+            items = items + ["Current Speed "+str(i).zfill(2)]
+        df = pd.read_csv(fname, skiprows=len(skiprows)+1, header=None)
+        df.columns = items
+    
     if "minute" not in df.columns:
         df["minute"] = np.zeros(len(df["year"]))
     if df.year[0] < 1000:
@@ -206,7 +255,13 @@ def modify_csv(fname):
     df.index = index
     df.index.name = "Datetime"
     df.drop(["year", "month", "day", "hour", "minute"], axis=1, inplace=True)
-    df = replace_nans(df)
+    
+    if type(items) == dict:
+        df = replace_nans(df, items.values())
+    else:
+        for c in df.columns:
+            df[c].replace("MM", np.nan, inplace=True)
+        #df = replace_nans(df, items)
     df.to_csv(fname)
 
 def download_map():
