@@ -42,15 +42,15 @@ from noaa_ndbc import NOAA
 #   default: None
 #   A 2-element list of minimum and maximum Y values for the bounding box
 
-# variable ("Meterological" or "Currents")
-#   default: "Meterological"
+# variable ("Meteorological" or "Currents")
+#   default: "Meteorological"
 #   The type of variables to be downloaded for the stations
 """
 #Download data for a single station in CSV format
 NOAA.download(46022)
 NOAA.download("46022")
 #Download data for a group of stations in CSV format
-NOAA.download([46022, "HBXC1"], variable="Meterological")
+NOAA.download([46022, "HBXC1"], variable="Meteorological")
 #Download data for a group of stations in CSV format starting 1995 (The start date will be replaced with the first available year in case it is after the specified year)
 NOAA.download([46022, "HBXC1"], start=1995, variable="Currents")
 #Download data for a group of stations in CSV format ending at 1995 (The end date will be replaced with the last available year in case it is before the specified year)
@@ -76,7 +76,7 @@ NOAA.download(X=[-127, -124], Y=[40, 42], dfs0=True, csv=False, shapefile=True, 
 
 #Other utilities
 #Check the availability of the data for a single station
-years = NOAA.check_data_availability(46022, variable="Meterological")
+years = NOAA.check_data_availability(46022, variable="Meteorological")
 print(years)
 
 #Get the station IDs within a bounding box
