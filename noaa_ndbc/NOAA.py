@@ -78,7 +78,7 @@ def mkch(path):
     os.chdir(path)
 
 def define_var(variable):
-    if variable == "Meterological":
+    if variable == "Meteorological":
         return "stdmet", "h"
     elif variable == "Currents":
         return "adcp", "a"
@@ -87,7 +87,7 @@ def define_var(variable):
     print("Variable is not defined!")
     quit()
     
-def check_data_availability(station_id, variable="Meterological"):
+def check_data_availability(station_id, variable="Meteorological"):
     var, letter = define_var(variable)
     years = []
     url = "https://www.ndbc.noaa.gov/historical_data.shtml"
@@ -105,7 +105,7 @@ def check_data_availability(station_id, variable="Meterological"):
                 years.append(int(year.text))
     return years
 
-def download_file(station_id, y, variable="Meterological"):
+def download_file(station_id, y, variable="Meteorological"):
     log = open("logs.txt", "a")
     
     var, letter = define_var(variable)
@@ -138,7 +138,7 @@ def save_dfs0(df, fname):
     items = set_items(df)
     df.to_dfs0(fname, items=items)
 
-def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=False, shapefile=False, shp_fname="Stations.shp", X=None, Y=None, variable="Meterological"):
+def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=False, shapefile=False, shp_fname="Stations.shp", X=None, Y=None, variable="Meteorological"):
     log = open("logs.txt", "w")
     var, letter = define_var(variable)
     if type(station_ids) != list:
@@ -209,7 +209,7 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
     log.close()
 
 def NOAA_items(variable):
-    if variable == "Meterological":
+    if variable == "Meteorological":
         items = {"YY": "year", "YYYY": "year", "#YY": "year",
                  "MM": "month",
                  "DD":"day",
@@ -262,7 +262,7 @@ def replace_nans(df, items):
     
     return df
     
-def modify_csv(fname, variable="Meterological"):
+def modify_csv(fname, variable="Meteorological"):
     f = open(fname, "r")
     l0 = f.readline()
     l1 = f.readline()
@@ -272,7 +272,7 @@ def modify_csv(fname, variable="Meterological"):
         skiprows = [1]
     f.close()
     
-    if variable == "Meterological":
+    if variable == "Meteorological":
         if skiprows == [0]:
             skiprows = 0
         df = pd.read_csv(fname, skiprows=skiprows)
