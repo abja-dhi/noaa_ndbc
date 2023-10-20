@@ -24,7 +24,52 @@ import os
 from pykml import parser
 import fiona
 from tqdm import tqdm
-from mikecore import eumUnit, eumItem, eumQuantity
+from mikecore.DfsFile import eumUnit, eumItem
+from mikeio.eum import EUMType, ItemInfo
+
+def set_items(df):
+    items = []
+    for c in df.columns:
+        if c == "WD":
+            itemInfo = ItemInfo("Wind Direction", EUMType.Wind_Direction, eumUnit.eumUdegree)
+        elif c == "WS":
+            itemInfo = ItemInfo("Wind Speed", EUMType.Wind_speed, eumUnit.eumUmeterPerSec)
+        elif c == "Gust_Speed":
+            itemInfo = ItemInfo("Gust Speed", EUMType.Wind_speed, eumUnit.eumUmeterPerSec)
+        elif c == "Hm0":
+            itemInfo = ItemInfo("Sig. Wave Height", EUMType.Significant_wave_height, eumUnit.eumUmeter)
+        elif c == "Tp":
+            itemInfo = ItemInfo("Tp", EUMType.Wave_period, eumUnit.eumUsec)
+        elif c == "T01":
+            itemInfo = ItemInfo("T01", EUMType.Wave_period, eumUnit.eumUsec)
+        elif c == "MWD":
+            itemInfo = ItemInfo("Mean Wave Dir.", EUMType.Wave_direction, eumUnit.eumUdegree)
+        elif c == "Sea_Level_Pressure":
+            itemInfo = ItemInfo("Sea Level Pressure", EUMType.Pressure, eumUnit.eumUhectoPascal)
+        elif c == "Air_Temperature":
+            itemInfo = ItemInfo("Air Temperature", EUMType.Temperature, eumUnit.eumUdegreeCelsius)
+        elif c == "Sea_Surface_Temperature":
+            itemInfo = ItemInfo("Sea Surface Temperature", EUMType.Temperature, eumUnit.eumUdegreeCelsius)
+        elif c == "Dewpoint_Temperature":
+            itemInfo = ItemInfo("Dewpoint Temperature", EUMType.Temperature, eumUnit.eumUdegreeCelsius)
+        elif c == "Visibility":
+            itemInfo = ItemInfo("Visibility", EUMType.Visibility, None)
+        elif c == "Pressure_Tendency":
+            itemInfo = ItemInfo("Pressure Tendency", EUMType.Pressure, eumUnit.eumUhectoPascal)
+        elif c == "Water_Level":
+            itemInfo = ItemInfo("Water Level", EUMType.Water_Level, eumUnit.eumUfeet)
+        elif "Depth " in c:
+            itemInfo = ItemInfo("Water Depth", EUMType.Water_Depth, eumUnit.eumUmeter)
+        elif "Current Direction " in c:
+            itemInfo = ItemInfo("Current Direction", EUMType.Current_Direction, eumUnit.eumUdegree)
+        elif "Current Speed " in c:
+            itemInfo = ItemInfo("Current Speed", EUMType.Current_Speed, eumUnit.eumUCentiMeterPerSecond)
+
+
+        items.append(itemInfo)
+
+    return items
+
 
 def mkch(path):
     try:
@@ -92,8 +137,8 @@ def download_file(station_id, y, variable="Meterological"):
     return True
 
 def save_dfs0(df, fname):
-    
-    df.to_dfs0(fname)
+    items = set_items(df)
+    df.to_dfs0(fname, items=items)
 
 def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=False, shapefile=False, shp_fname="Stations.shp", X=None, Y=None, variable="Meterological"):
     log = open("logs.txt", "w")
