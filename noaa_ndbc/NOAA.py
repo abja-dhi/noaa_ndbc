@@ -24,6 +24,7 @@ import os
 from pykml import parser
 import fiona
 from tqdm import tqdm
+from mikecore import eumUnit, eumItem, eumQuantity
 
 def mkch(path):
     try:
@@ -90,6 +91,10 @@ def download_file(station_id, y, variable="Meterological"):
     log.close()
     return True
 
+def save_dfs0(df, fname):
+    
+    df.to_dfs0(fname)
+
 def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=False, shapefile=False, shp_fname="Stations.shp", X=None, Y=None, variable="Meterological"):
     log = open("logs.txt", "w")
     var, letter = define_var(variable)
@@ -135,7 +140,7 @@ def download(station_ids=[], start=None, end=None, csv=True, dfs0=False, merge=F
                 modify_csv(f, variable=variable)
                 df = pd.read_csv(f, index_col=0, parse_dates=True)
                 if dfs0:
-                    df.to_dfs0(f.replace(".csv", ".dfs0"))
+                    save_dfs0(df, f.replace(".csv", ".dfs0"))
                     log.write(f.replace(".csv", ".dfs0") + " is downloaded!\n")
                 #print("Data for " + str(y) + " is downloaded as " + f)
                 if csv == False:
