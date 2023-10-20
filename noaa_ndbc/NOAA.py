@@ -70,7 +70,6 @@ def set_items(df):
 
     return items
 
-
 def mkch(path):
     try:
         os.mkdir(path)
@@ -88,7 +87,6 @@ def define_var(variable):
     print("Variable is not defined!")
     quit()
     
-
 def check_data_availability(station_id, variable="Meterological"):
     var, letter = define_var(variable)
     years = []
