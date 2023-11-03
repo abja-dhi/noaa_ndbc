@@ -5,6 +5,7 @@ pyproject.toml
 setup.cfg
 noaa_ndbc/NOAA.py
 noaa_ndbc/__init__.py
+noaa_ndbc/utils.py
 noaa_ndbc.egg-info/PKG-INFO
 noaa_ndbc.egg-info/SOURCES.txt
 noaa_ndbc.egg-info/dependency_links.txt
