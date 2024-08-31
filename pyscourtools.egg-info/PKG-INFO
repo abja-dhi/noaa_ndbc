@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: pyscourtools
+Version: 0.0.1
+Summary: Useful tools to analyze dam break scour tests
+Home-page: https://github.com/sajazaeri/pyscourtools
+Author: Seyed Abbas Jazaeri
+Author-email: s.a.jazaeri@uottawa.ca
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: MIT License
+Classifier: Operating System :: OS  Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE

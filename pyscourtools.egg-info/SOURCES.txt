@@ -1,0 +1,13 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+pyscourtools/__init__.py
+pyscourtools/data_analysis.py
+pyscourtools/io.py
+pyscourtools/plotter.py
+pyscourtools/video_analysis.py
+pyscourtools.egg-info/PKG-INFO
+pyscourtools.egg-info/SOURCES.txt
+pyscourtools.egg-info/dependency_links.txt
+pyscourtools.egg-info/top_level.txt
