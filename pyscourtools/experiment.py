@@ -5,15 +5,16 @@ from .animation import VideoOnScreen, VideoAsAnimation
 from .io import IO
 from .scour import ScourScatter
 import pandas as pd
+import numpy as np
 import os
 
 
 class Experiment:
-    colors = {"US1": '#283747', "US2": '#0051a2', "US3": '#41ab5d', "US4": '#feb24c', "US5": '#93003a', "ADV-x": "#283747"}
+    colors = {"US1": '#283747', "US2": '#0051a2', "US3": '#41ab5d', "US4": '#feb24c', "US5": '#93003a', "ADV": "#283747"}
     def __init__(self,
                  test_name,
                  filename=None,
-                 instruments=["US1", "US2", "US3", "US4", "ADV-x"],
+                 instruments=["US1", "US2", "US3", "US4", "ADV"],
                  use_corrected_instruments=False,
                  use_filtered_instruments=False,
                  videos=["Upstream", "Downstream", "Side", "Front", "Back"],
@@ -22,8 +23,12 @@ class Experiment:
                  duration=60,
                  thresholds=None,
                  add_scour=True,
+                 structure="auto",
                  reach_times="Reach Times.csv",
+                 point_cloud_fname="LiDAR/Point Cloud.txt",
+                 rotate_X_start=None, rotate_X_end=None, rotate_y=None, rotate=None,
                  apply_filter=True) -> None:
+        self.path = path
         self.duration = duration
         self.test_name = test_name
         if thresholds is not None:
@@ -55,6 +60,7 @@ class Experiment:
                 setattr(self, instrument, Instrument(test_name=test_name, instrument=instrument, data=self.data[instrument], thresholds=self.thresholds[mask], color=self.colors[instrument]))
         for view in videos:
             setattr(self, view.capitalize(), Video(view=view, path=path, use_trimmed_videos=use_trimmed_videos, duration=self.duration))
+        
         if os.path.exists(os.path.join(path, "Scour Depth")):
             for f in os.listdir(os.path.join(path, "Scour Depth")):
                 if f.endswith(".csv"):
@@ -62,20 +68,32 @@ class Experiment:
                         df = pd.read_csv(os.path.join(path, f"Scour Depth/{f}"), index_col=1)
                         instrument = getattr(self, f.split(".")[0])
                         instrument.correction = df
+                    elif "final scour" in f.lower():
+                        df = pd.read_csv(os.path.join(path, f"Scour Depth/{f}"), index_col=0, header=None, names=["Instrument", "Scour Depth"])
+                        for inst in df.index.to_list():
+                            if inst in instruments:
+                                instrument = getattr(self, inst)
+                                instrument.final_scour = df.loc[inst, "Scour Depth"]
+                    elif "corner" in f.lower():
+                        df = pd.read_csv(os.path.join(path, f"Scour Depth/{f}"), index_col=1)
+                        instrument = getattr(self, "US3")
+                        instrument.corner = df
+                                
         if os.path.exists(os.path.join(path, reach_times)):
             times = pd.read_csv(os.path.join(path, reach_times), index_col=0, skiprows=1, names=["Instrument", "Reach Time"])
             for inst, row in times.iterrows():
                 instrument = getattr(self, inst)
                 instrument.reach_time = row["Reach Time"]
         if add_scour:
-            if os.path.exists(os.path.join(path, "LiDAR", "Point Cloud.txt")):
-                self.scour = ScourScatter(self, apply_filter=apply_filter)
+            if os.path.exists(os.path.join(path, point_cloud_fname)):
+                self.scour_path = os.path.join(path, point_cloud_fname)
+                self.scour = ScourScatter(self, apply_filter=apply_filter, structure=structure, rotate=rotate, rotate_X_start=rotate_X_start, rotate_X_end=rotate_X_end, rotate_y=rotate_y)
 
     def plot(self, instruments=["US1", "US2", "US3", "US4"], duration=60, description=True, x_description=0.8, y_description=0.7, add_scour=False, **kwargs):
         if isinstance(instruments, str):
             instruments = [instruments]
-        if "ADV-x" in instruments:
-            instruments.remove("ADV-x")
+        if "ADV" in instruments:
+            instruments.remove("ADV")
             print("Warning: ADV data is not plotted due to inconsistency with the other instruments!")
         plot = Plotter()
         for instrument in instruments:
@@ -87,12 +105,12 @@ class Experiment:
             plot.add_description(self.test_name, x_description=x_description, y_description=y_description)
         return plot
     
-    def animate(self, instrument, video, speed_factor=1.0, show=True, save=False, **kwargs):
+    def animate(self, instrument, video, speed_factor=1.0, show=True, save=False, add_scour=False, **kwargs):
         if show and save:
             raise ValueError("Both show and save cannot be True!")
         inst = getattr(self, instrument)
         vid = getattr(self, video)
         if show:
-            VideoOnScreen(vid, inst, speed_factor, test_name=self.test_name).start(**kwargs)
+            VideoOnScreen(vid, inst, speed_factor, test_name=self.test_name, add_scour=add_scour, **kwargs).start(**kwargs)
         elif save:
-            VideoAsAnimation(vid, inst, speed_factor, test_name=self.test_name).start(**kwargs)
+            VideoAsAnimation(vid, inst, speed_factor, test_name=self.test_name, add_scour=add_scour, **kwargs).start(**kwargs)

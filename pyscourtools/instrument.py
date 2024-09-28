@@ -31,6 +31,7 @@ class Instrument:
         self.original_time = self.time.copy()
         self.thresholds = thresholds
         self.correction = None
+        self.corner = None
         self.reach_time = None
         self.color = color
         self._set_instrument_info()
@@ -38,7 +39,7 @@ class Instrument:
     def _set_instrument_info(self):
         if "US" in self.name:
             self.unit = "mm"
-            self.label = "Elevation"
+            self.label = "Z"
         elif "ADV" in self.name:
             self.unit = "m/s"
             self.label = "Velocity"
@@ -158,24 +159,32 @@ class Instrument:
         else:
             df.to_csv(f"Processed Data/{self.name}.csv")
 
-    def plot(self, duration=60, description=True, x_description=0.8, y_description=0.7, set_prop=True, add_scour=False, ax=None, fig=None, color=True, marker=False, **kwargs):
+    def plot(self, duration=60, description=True, x_description=0.8, y_description=0.7, set_prop=True, add_scour=False, add_final_scour=False, ax=None, fig=None, color=True, marker=False, **kwargs):
         label = kwargs.get("label", self.name)
-        plot = Plotter(fig=fig, ax=ax)
+        xlim = kwargs.get("xlim", [0, duration])
+        kwargs["xlim"] = xlim
+        plot = Plotter(fig=fig, ax=ax, **kwargs)
         if color:
             color = self.color
         else:
             color = None
         fig, ax = plot.plot(self.time, self.data, label=f"{self.variable} - {label}", color=color, marker=marker)
         if add_scour:
-            scour = self._interp_correction()
-            color = ax[0].lines[-1].get_color()
-            if scour is not None:
-                scour = -scour
-                plot.plot(self.time, scour, color=color, linestyle="--", label=f"Bed Elevation - {label}")
+            try:
+                scour = -self._interp_correction()
+                color = ax[0].lines[-1].get_color()
+                if scour is not None:
+                    plot.plot(self.time, scour, color=color, linestyle="--", label=f"Bed Elevation - {label}")
+            except:
+                pass
+        if add_final_scour:
+            if self.final_scour is not None:
+                plot.scatter([self.time[-50]], [self.final_scour], color=color, marker="o", label=f"Final Scour Depth - {label}", alpha=1, s=50)
+            
         if description:
             plot.add_description(self.test_name, x_description=x_description, y_description=y_description)
         if set_prop:
-            plot.set_prop(xlabel="Time [s]", ylabel=f"{self.label} [{self.unit}]", title=self.test_name, xlim=[0, duration], legend=True, grid=False, **kwargs)
+            plot.set_prop(xlabel="Time [s]", ylabel=f"{self.label} [{self.unit}]", title=self.test_name, legend=True, grid=False, **kwargs)
         return plot
 
     def moving_average(self, window_size, min_periods=1):
@@ -253,8 +262,16 @@ class Instrument:
         else:
             return None
         
-    def point_selector(self, new_file=False):
-        plot = self.plot(marker=True)
+    def _interp_corner(self):
+        if self.corner is not None:
+            corner_time = self.corner.index.to_numpy()
+            corner_data = self.corner["Scour depth"].to_numpy().flatten()
+            interp_func = interp1d(corner_time, corner_data, kind="linear", fill_value="extrapolate")
+            interp_depth = interp_func(self.time)
+            return interp_depth
+        
+    def point_selector(self, new_file=False, **kwargs):
+        plot = self.plot(marker=True, **kwargs)
         ax = plot.ax[0]
         selector = SelectPoints(ax, self.time, self.data, f"{self.name}.csv", new_file=new_file)
         plt.show()

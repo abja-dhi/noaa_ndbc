@@ -11,7 +11,7 @@ class Experiment:
     def __init__(self,
                  test_name,
                  filename=None,
-                 instruments=["US1", "US2", "US3", "US4", "ADV-x"],
+                 instruments=["US1", "US2", "US3", "US4", "ADV"],
                  use_corrected_instruments=False,
                  use_filtered_instruments=False,
                  videos=["Upstream", "Downstream", "Side", "Front", "Back"],
@@ -56,8 +56,8 @@ class Experiment:
     def plot(self, instruments=["US1", "US2", "US3", "US4"], duration=60, description=True, x_description=0.8, y_description=0.7, **kwargs):
         if isinstance(instruments, str):
             instruments = [instruments]
-        if "ADV-x" in instruments:
-            instruments.remove("ADV-x")
+        if "ADV" in instruments:
+            instruments.remove("ADV")
             print("Warning: ADV data is not plotted due to inconsistency with the other instruments!")
         plot = Plotter()
         for instrument in instruments:

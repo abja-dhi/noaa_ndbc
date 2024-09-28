@@ -19,6 +19,6 @@ class Compare:
         plot.set_prop(xlabel="Time [s]", ylabel=f"{inst.label} [{inst.unit}]", title=instrument, legend=True, grid=False, **kwargs)
         if description:
             test_names = [test.test_name for test in self.tests]
-            plot.add_description(test_names, x_description=x_description, y_description=y_description)
+            plot.add_description(test_names, x_description=x_description, y_description=y_description, facecolor=None, alpha=0)
         return plot
     

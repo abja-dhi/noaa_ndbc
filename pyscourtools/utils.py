@@ -1,7 +1,45 @@
 import numpy as np
+import pandas as pd
+
+class Point:
+    def __init__(self, x, y) -> None:
+        self.x = x
+        self.y = y
+
+    def rotate(self, origin, angle):
+        xo, yo = origin
+        self.x = self.x - xo
+        self.y = self.y - yo
+        rad = np.deg2rad(angle)
+        angle = -angle
+        x_new = self.x * np.cos(rad) - self.y * np.sin(rad)
+        y_new = self.x * np.sin(rad) + self.y * np.cos(rad)
+        x_new = x_new + xo
+        y_new = y_new + yo
+        self.x = x_new
+        self.y = y_new
+
+
+    def to_list(self):
+        return [self.x, self.y]
+
+    def __str__(self) -> str:
+        return f"({self.x}, {self.y})"
 
 class Structure:
     def __init__(self, experiment) -> None:
+        if isinstance(experiment, pd.DataFrame):
+            self._from_df(experiment)
+        else:
+            self._from_experiment(experiment)
+        
+    def _from_df(self, experiment):
+        self.p1 = Point(experiment.loc["Upstream-upper", "X"], experiment.loc["Upstream-upper", "Y"])
+        self.p2 = Point(experiment.loc["Upstream-lower", "X"], experiment.loc["Upstream-lower", "Y"])
+        self.p3 = Point(experiment.loc["Downstream-lower", "X"], experiment.loc["Downstream-lower", "Y"])
+        self.p4 = Point(experiment.loc["Downstream-upper", "X"], experiment.loc["Downstream-upper", "Y"])
+
+    def _from_experiment(self, experiment):
         self.experiment = experiment
         structure = experiment.test_name.split("-")[0]
         if structure == "SC":
@@ -25,45 +63,32 @@ class Structure:
         upper_y = (-1.5 + self.width) / 2
         lower_y = (-1.5 - self.width) / 2
         
-        p1 = [start_X, upper_y]
-        p2 = [end_X, upper_y]
-        p3 = [end_X, lower_y]
-        p4 = [start_X, lower_y]
+        p1 = Point(start_X, upper_y)
+        p2 = Point(end_X, upper_y)
+        p3 = Point(end_X, lower_y)
+        p4 = Point(start_X, lower_y)
         
         if angle == np.nan:
             angle = 0
 
         origin = [1.95, -0.75]
-        p1 = self._rotate_point(p1, origin, angle)
-        p2 = self._rotate_point(p2, origin, angle)
-        p3 = self._rotate_point(p3, origin, angle)
-        p4 = self._rotate_point(p4, origin, angle)
-        max_x = max([p1[0], p2[0], p3[0], p4[0]])
+        p1.rotate(origin, angle)
+        p2.rotate(origin, angle)
+        p3.rotate(origin, angle)
+        p4.rotate(origin, angle)
+        max_x = max([p1.x, p2.x, p3.x, p4.x])
         dx = max_x - 2
-        p1[0] = p1[0] - dx
-        p2[0] = p2[0] - dx
-        p3[0] = p3[0] - dx
-        p4[0] = p4[0] - dx
+        p1.x = p1.x - dx
+        p2.x = p2.x - dx
+        p3.x = p3.x - dx
+        p4.x = p4.x - dx
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
         self.p4 = p4
-        
 
-    @staticmethod
-    def _rotate_point(point, origin, angle):
-        x, y = point
-        xo, yo = origin
-        x = x - xo
-        y = y - yo
-        rad = np.deg2rad(angle)
-        angle = -angle
-        x_new = x * np.cos(rad) - y * np.sin(rad)
-        y_new = x * np.sin(rad) + y * np.cos(rad)
-        x_new = x_new + xo
-        y_new = y_new + yo
-        return [x_new, y_new]
-
+    def __str__(self) -> str:
+        return f"Structure coordinates: \n   P1: {str(self.p1)}\n   P2: {str(self.p2)}\n   P3: {str(self.p3)}\n   P4: {str(self.p4)}"
 
 
 class Impoundment:

@@ -5,4 +5,4 @@ from .video import Video
 from .animation import VideoOnScreen, VideoAsAnimation
 from .compare import Compare
 from .plotter import Plotter, Specifications
-from .scour import ScourScatter
+from .scour import ScourScatter, ScourScatterCheck

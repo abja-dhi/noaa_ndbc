@@ -8,6 +8,10 @@ import os
 from matplotlib.widgets import LassoSelector
 from matplotlib.path import Path
 from .utils import utils
+plt.rc('xtick', labelsize=18)
+plt.rc('ytick', labelsize=18)
+plt.rc('axes', labelsize=18)
+plt.rc('axes', titlesize=18)
 
 class Specifications:
     def __init__(self):
@@ -65,10 +69,20 @@ class Plotter:
         self.ax[ax_number].plot(x, y, color=color, linestyle=linestyle, marker=marker, label=label, alpha=alpha)
         return self.fig, self.ax
 
+    def scatter(self, x, y, ax_number=0, **kwargs):
+        color = kwargs.pop('color', "black")
+        label = kwargs.pop('label', 'Data')
+        marker = kwargs.pop('marker', 'o')
+        size = kwargs.pop('size', 50)
+        self.ax[ax_number].scatter(x, y, s=size, color=color, label=label, marker=marker)
+        return self.fig, self.ax
+
     def add_description(self, test_names, x_description=0.8, y_description=0.7, ax_number=0, **kwargs):
         facecolor = kwargs.pop('facecolor', 'white')
+        fontsize = kwargs.pop('fontsize', 12)
+        alpha = kwargs.pop('alpha', 0.5)
         items = self._get_description(test_names)
-        self.ax[ax_number].text(x_description, y_description, items, transform=self.ax[ax_number].transAxes, ha="left", va="top", bbox=dict(facecolor=facecolor, edgecolor='black', boxstyle='round'))
+        self.ax[ax_number].text(x_description, y_description, items, transform=self.ax[ax_number].transAxes, ha="left", va="top", bbox=dict(facecolor=facecolor, edgecolor='black', boxstyle='round', alpha=alpha), fontsize=fontsize)
 
     def _get_description(self, test_names):
         items = ["Test Name Definitions"]
@@ -99,6 +113,7 @@ class Plotter:
         xlabel = kwargs.pop('xlabel', 'X')
         ylabel = kwargs.pop('ylabel', 'Y')
         legend = kwargs.pop('legend', False)
+        fontsize=kwargs.pop('fontsize', 12)
         grid = kwargs.pop('grid', True)
         xlim = kwargs.pop('xlim', None)
         ylim = kwargs.pop('ylim', None)
@@ -116,9 +131,9 @@ class Plotter:
         if yticks:
             self.ax[ax_number].set_yticks(yticks)
         if grid:
-            self.ax[ax_number].grid()
+            self.ax[ax_number].grid(grid)
         if legend:
-            self.ax[ax_number].legend()
+            self.ax[ax_number].legend(fontsize=fontsize)
 
     def show(self):
         plt.show()
@@ -130,6 +145,7 @@ class Plotter:
         if not os.path.exists(directory) and directory != "":
             os.makedirs(directory)
         plt.savefig(path, dpi=dpi, bbox_inches=bbox_inches)
+        # plt.close()
 
     def contour(self, x, y, z, ax_number=0, add_colorbar=True, **kwargs):
         cticks = kwargs.pop('cticks', None)
